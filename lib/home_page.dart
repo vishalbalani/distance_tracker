@@ -36,16 +36,23 @@ class _HomePageState extends State<HomePage> {
       _startPosition = await Geolocator.getCurrentPosition();
 
       Geolocator.getPositionStream().listen((Position position) {
-        double distance = Geolocator.distanceBetween(
-          _startPosition!.latitude,
-          _startPosition!.longitude,
-          position.latitude,
-          position.longitude,
-        );
+        // Filter out stationary points
+        if (_startPosition != null &&
+            _distanceBetween(_startPosition!, position) > 10) {
+          double distance = Geolocator.distanceBetween(
+            _startPosition!.latitude,
+            _startPosition!.longitude,
+            position.latitude,
+            position.longitude,
+          );
 
-        setState(() {
-          _totalDistance += distance;
-        });
+          setState(() {
+            _totalDistance += distance;
+          });
+
+          // Update the start position for the next calculation
+          _startPosition = position;
+        }
       });
     } catch (e) {
       setState(() {
@@ -54,10 +61,20 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  double _distanceBetween(Position start, Position end) {
+    return Geolocator.distanceBetween(
+      start.latitude,
+      start.longitude,
+      end.latitude,
+      end.longitude,
+    );
+  }
+
   void stopTracking() {
     setState(() {
       _isTracking = false;
       _totalDistance = 0.0;
+      _startPosition = null;
     });
   }
 
